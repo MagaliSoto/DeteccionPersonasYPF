@@ -98,7 +98,7 @@ def guardar_imagen(imagen, id_interno, carpeta_salida, tipo):
         print(f"[ERROR] No se pudo guardar la imagen para ID {id_interno}")
         return None
 
-    print(f"[INFO] Imagen guardada: {ruta_completa}")
+    #print(f"[INFO] Imagen guardada: {ruta_completa}")
 
     return ruta_completa
 

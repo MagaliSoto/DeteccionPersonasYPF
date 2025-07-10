@@ -22,7 +22,7 @@ class GestorDescripciones:
         except Exception as e:
             print(f"[ERROR] Gemini: ID {id_persona} - {e}")
 
-    def describir_con_coglvm(self, imagen_path, id_persona, prompt="Describí detalladamente la vestimenta de la persona."):
+    def describir_con_coglvm(self, imagen_path, id_persona):
         """
         Genera una descripción de una persona usando el modelo CogVLM a través de una API tipo OpenAI.
         Recibe la ruta de una imagen y envía una solicitud al servidor local.
@@ -44,7 +44,7 @@ class GestorDescripciones:
                     "content": [
                         {
                             "type": "text",
-                            "text": prompt,
+                            "text": self.prompt,
                         },
                         {
                             "type": "image_url",

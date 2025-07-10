@@ -4,11 +4,17 @@ from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 
 from db_manager import DBManager
+from utils.gestor_alertas import GestorAlertas
 from detectores.detector_personas import DetectorPersonas
 from descripciones.gestor_descripciones import GestorDescripciones
 
 # Forzar transporte TCP en FFMPEG (muy útil para RTSP)
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
+
+account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+from_wpp = os.getenv("TWILIO_FROM_WPP")
+to_wpp = os.getenv("TWILIO_TO_WPP")
 
 def principal():
     ruta_video = os.getenv("RUTA_VIDEO", "rtsp://admin:2Mini001.@192.168.0.204/cam/realmonitor?channel=1&subtype=0")
@@ -31,13 +37,15 @@ def principal():
         "Fecha_registro": "DATETIME"
     }
 
+    ejecutor = ThreadPoolExecutor(max_workers=4)
     db = DBManager("registro_personas", estructura)
     gestor_descripciones = GestorDescripciones(prompt, db)
-    ejecutor = ThreadPoolExecutor(max_workers=4)
+    gestor_alertas = GestorAlertas(
+    )
 
     detector = DetectorPersonas(
         carpeta_salida,
-        gestor_descripciones.describir_con_coglvm,
+        gestor_alertas.actualizar,
         db,
         executor=ejecutor
     )
@@ -65,8 +73,6 @@ def principal():
             time.sleep(5)
             continue
 
-        fps = int(video.get(cv2.CAP_PROP_FPS)) or 30
-        ancho_frame, alto_frame = 1280, 720
         contador_frames = 0
         ultimo_frame_procesado = None
 
@@ -76,9 +82,10 @@ def principal():
                 print("Error al leer frame, reiniciando stream...")
                 video.release()
                 time.sleep(5)
-                break
-
-            frame = cv2.resize(frame, (ancho_frame, alto_frame))
+                break                
+            
+            # Dibujar area
+            cv2.rectangle(frame, (860, 550), (1640, 1000), (0, 255, 0), 2)
 
             if contador_frames % 5 == 0 and not cola_frames.full():
                 cola_frames.put((contador_frames, frame.copy()))

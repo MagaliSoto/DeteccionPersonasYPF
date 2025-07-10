@@ -5,7 +5,7 @@ from detectores.detector_caras import DetectorCaras
 from utils import imagenes_utils as iu
 
 class DetectorPersonas:
-    def __init__(self, carpeta_salida, funcion_descripcion, database, ruta_modelo="models/yolo11-person.pt", executor=None):
+    def __init__(self, carpeta_salida, funcion_alerta, database, ruta_modelo="models/yolo11-person.pt", executor=None):
         """
         Inicializa el sistema de detección de personas usando YOLO, junto con
         detección de rostros, descripciones automáticas y gestión de base de datos.
@@ -17,7 +17,7 @@ class DetectorPersonas:
         self.carpeta_salida = carpeta_salida
         os.makedirs(self.carpeta_salida, exist_ok=True)
 
-        self.funcion_descripcion = funcion_descripcion
+        self.funcion_alerta = funcion_alerta
         self.executor = executor or ThreadPoolExecutor(max_workers=4)
         self.detector_caras = DetectorCaras(self.carpeta_salida, self.executor, database)
 
@@ -73,14 +73,16 @@ class DetectorPersonas:
             # Recortar y guardar imagen
             imagen = self.cortar_y_guardar(frame, caja, id_persona)
 
-            # Generar descripción textual si ha pasado suficiente tiempo
-            ahora = time.time()
-            if ahora - self.track_id_tiempo.get(id_persona, 0) >= self.intervalo_descripcion:
-                self.track_id_tiempo[id_persona] = ahora
-                self.executor.submit(self.funcion_descripcion, imagen, id_persona)
+            # Verificar si el centro del bbox está dentro del área definida
+            cx = (x1 + x2) // 2
+            cy = (y1 + y2) // 2
+            dentro_del_area = (860 <= cx <= 1640) and (550 <= cy <= 1000)
+
+            # Llamar a la función de alerta
+            self.executor.submit(self.funcion_alerta,id_persona, imagen, dentro_del_area)
 
             # Detección de rostro en el recorte
-            self.executor.submit(self.detector_caras.detectar_caras_en_imagen, imagen, id_persona)
+            #self.executor.submit(self.detector_caras.detectar_caras_en_imagen, imagen, id_persona)
             #resultado = self.detector_caras.detectar_caras_en_imagen(imagen, id_persona)
             """
             if resultado:

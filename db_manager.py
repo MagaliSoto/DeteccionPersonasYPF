@@ -100,7 +100,7 @@ class DBManager:
             cursor = conn.cursor()
             cursor.execute(sql, params)
             conn.commit()
-            print(f"[BD] Guardado correcto: {log_mensaje}")
+            #print(f"[BD] Guardado correcto: {log_mensaje}")
         except mysql.connector.Error as err:
             print(f"[ERROR BD] {log_mensaje}: {err}")
         finally:
